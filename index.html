@@ -3,67 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EVA BANK - لوحة إدارة الحزم وتوليد الرخص</title>
+    <title>EVA BANK - نظام إدارة الاشتراكات المركزي</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
         body { background-color: #f4f7f6; color: #333; padding: 20px; direction: rtl; }
-        .container { max-width: 600px; margin: 40px auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        
+        /* شاشة تسجيل الدخول */
+        #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .login-card { background: #fff; padding: 30px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+        .login-card h2 { text-align: center; margin-bottom: 20px; color: #111; }
+
+        /* التصميم العام */
+        .container { max-width: 800px; margin: 20px auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        
+        /* القائمة العلوية (التبويبات) */
+        .navbar { display: flex; justify-content: space-around; background: #343a40; border-radius: 8px; margin-bottom: 25px; overflow: hidden; }
+        .nav-btn { background: none; border: none; color: white; padding: 15px 20px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; transition: background 0.3s; }
+        .nav-btn:hover, .nav-btn.active { background: #007bff; }
+
         h1 { text-align: center; color: #111; margin-bottom: 25px; font-size: 24px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: 600; color: #444; }
         select, input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; transition: border 0.3s; }
         select:focus, input:focus { border-color: #007bff; }
-        button { width: 100%; background: #007bff; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
-        button:hover { background: #0056b3; }
+        
+        .action-btn { width: 100%; background: #28a745; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+        .action-btn:hover { background: #218838; }
+
         .result-box { margin-top: 25px; padding: 20px; background: #e9ecef; border-radius: 8px; display: none; text-align: center; }
         .result-box h3 { color: #28a745; margin-bottom: 10px; }
         .key-display { font-size: 20px; font-weight: bold; background: #fff; padding: 10px; border: 1px dashed #ccc; border-radius: 6px; display: inline-block; margin-top: 10px; color: #333; letter-spacing: 2px; }
+
+        /* الجداول والمشاريع */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: center; font-size: 14px; }
+        th { background-color: #f8f9fa; color: #333; }
+        .delete-btn { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        .delete-btn:hover { background: #c82333; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>🏦 EVA BANK - إدارة الاشتراكات</h1>
-    
-    <div class="form-group">
-        <label for="projectSelect">اختر المشروع المستهدف:</label>
-        <select id="projectSelect">
-            <option value="catalog">قالب الكتالوج الذكي (Catalog)</option>
-            <option value="miss_eva">المعلمة إيفا (Miss Eva)</option>
-        </select>
-    </div>
-
-    <div class="form-group">
-        <label for="phoneInput">رقم هاتف المشترك:</label>
-        <input type="text" id="phoneInput" placeholder="مثال: 970594101632">
-    </div>
-
-    <div class="form-group">
-        <label for="packageSelect">اختر مدة الحزمة (الصلاحية):</label>
-        <select id="packageSelect">
-            <option value="30">شهر واحد (30 يوم)</option>
-            <option value="90">3 شهور (90 يوم)</option>
-            <option value="365">سنة كاملة (365 يوم)</option>
-            <option value="1">تجريبي (سريع - يوم واحد)</option>
-        </select>
-    </div>
-
-    <button onclick="generateKey()">توليد وتفعيل رمز الاشتراك</button>
-
-    <div id="resultBox" class="result-box">
-        <h3>تم توليد الرمز بنجاح!</h3>
-        <p>رمز التفعيل الخاص بالزبون:</p>
-        <div class="key-display" id="generatedKeyText"></div>
+<!-- شاشة تسجيل الدخول -->
+<div id="loginOverlay">
+    <div class="login-card">
+        <h2>🔒 تسجيل دخول بنك إيفا</h2>
+        <div class="form-group">
+            <label>اسم المستخدم (USER):</label>
+            <input type="text" id="userInput" placeholder="EVA-001">
+        </div>
+        <div class="form-group">
+            <label>كلمة المرور (PASS):</label>
+            <input type="password" id="passInput" placeholder="0594101632">
+        </div>
+        <button class="action-btn" onclick="handleLogin()">دخول النظام</button>
     </div>
 </div>
 
-<!-- ربط Firebase SDK ومحرك التوليد -->
+<!-- لوحة التحكم الرئيسية -->
+<div class="container" id="mainDashboard">
+    <h1>🏦 EVA BANK - نظام إدارة الاشتراكات</h1>
+
+    <!-- القائمة العلوية (3 شحطات/تبويبات) -->
+    <div class="navbar">
+        <button class="nav-btn active" onclick="switchTab('generateTab', this)">شحن وتوليد الرخص</button>
+        <button class="nav-btn" onclick="switchTab('usersTab', this); loadUsers();">المستخدمين الفعالين</button>
+        <button class="nav-btn" onclick="switchTab('projectsTab', this); loadProjects();">إدارة المشاريع</button>
+    </div>
+
+    <!-- 1. شاشة شحن وتوليد الرخص -->
+    <div id="generateTab" class="tab-content active">
+        <div class="form-group">
+            <label for="projectSelect">اختر المشروع المستهدف:</label>
+            <select id="projectSelect">
+                <!-- يتم تعبئتها ديناميكياً -->
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="phoneInput">رقم هاتف المشترك:</label>
+            <input type="text" id="phoneInput" placeholder="مثال: 970594101632">
+        </div>
+
+        <div class="form-group">
+            <label for="packageSelect">اختر مدة الحزمة (الصلاحية):</label>
+            <select id="packageSelect">
+                <option value="30">شهر واحد (30 يوم)</option>
+                <option value="90">3 شهور (90 يوم)</option>
+                <option value="365">سنة كاملة (365 يوم)</option>
+                <option value="1">تجريبي (يوم واحد)</option>
+            </select>
+        </div>
+
+        <button class="action-btn" onclick="generateKey()">توليد وتفعيل رمز الاشتراك</button>
+
+        <div id="resultBox" class="result-box">
+            <h3>تم توليد الرمز بنجاح!</h3>
+            <p>رمز التفعيل الخاص بالزبون:</p>
+            <div class="key-display" id="generatedKeyText"></div>
+        </div>
+    </div>
+
+    <!-- 2. شاشة المستخدمين الفعالين -->
+    <div id="usersTab" class="tab-content">
+        <h2>قائمة المشتركين والفعالين بالنظام</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>رقم الهاتف</th>
+                    <th>المشروع</th>
+                    <th>رمز التفعيل</th>
+                    <th>تاريخ الانتهاء</th>
+                    <th>الحالة</th>
+                </tr>
+            </thead>
+            <tbody id="usersTableBody">
+                <tr><td colspan="5"> جاري تحميل البيانات... </td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 3. شاشة إدارة المشاريع -->
+    <div id="projectsTab" class="tab-content">
+        <h2>إدارة مشاريع إيفا</h2>
+        <div class="form-group" style="margin-top: 15px;">
+            <label>إضافة مشروع جديد:</label>
+            <input type="text" id="newProjectName" placeholder="أدخل اسم المشروع (مثلاً: متجر العطور)">
+            <input type="text" id="newProjectId" placeholder="معرف المشروع بالإنجليزية (مثلاً: perfumes)" style="margin-top: 10px;">
+            <button class="action-btn" style="margin-top: 10px;" onclick="addProject()">إضافة المشروع</button>
+        </div>
+        <hr style="margin: 20px 0;">
+        <h3>المشاريع الحالية:</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>اسم المشروع</th>
+                    <th>المعرف (ID)</th>
+                    <th>الإجراء</th>
+                </tr>
+            </thead>
+            <tbody id="projectsTableBody">
+                <!-- يتم تعبئتها ديناميكياً -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ربط Firebase SDK ومنطق النظام -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // مفاتيح الربط الخاصة بمشروع EVA BANK الجديد
     const firebaseConfig = {
         apiKey: "AIzaSyCW-Kqz4jQbu-wUg-LOVPJdWv7p3jIOB6o",
         authDomain: "eva-bank-a077d.firebaseapp.com",
@@ -76,6 +170,48 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // التحقق من تسجيل الدخول
+    window.handleLogin = function() {
+        const u = document.getElementById('userInput').value.trim();
+        const p = document.getElementById('passInput').value.trim();
+        if(u === "EVA-001" && p === "0594101632") {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('mainDashboard').style.display = 'block';
+            loadProjectsToDropdown();
+        } else {
+            alert('خطأ في اسم المستخدم أو كلمة المرور!');
+        }
+    };
+
+    // التنقل بين التبويبات
+    window.switchTab = function(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+    };
+
+    // تحميل المشاريع في قائمة الاختيار
+    async function loadProjectsToDropdown() {
+        const select = document.getElementById('projectSelect');
+        select.innerHTML = '';
+        try {
+            const querySnapshot = await getDocs(collection(db, "projects"));
+            if(querySnapshot.empty) {
+                // مشاريع افتراضية إذا كانت القائمة فارغة
+                select.innerHTML = '<option value="catalog">قالب الكتالوج الذكي (Catalog)</option><option value="miss_eva">المعلمة إيفا (Miss Eva)</option>';
+            } else {
+                querySnapshot.forEach((docSnap) => {
+                    const p = docSnap.data();
+                    select.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+                });
+            }
+        } catch(e) {
+            select.innerHTML = '<option value="catalog">قالب الكتالوج الذكي (Catalog)</option><option value="miss_eva">المعلمة إيفا (Miss Eva)</option>';
+        }
+    }
+
+    // توليد وتفعيل رمز الاشتراك
     window.generateKey = async function() {
         const project = document.getElementById('projectSelect').value;
         const phone = document.getElementById('phoneInput').value.trim();
@@ -108,8 +244,87 @@
             document.getElementById('resultBox').style.display = 'block';
             alert('تم حفظ وتفعيل الرمز في بنك الحزم بنجاح!');
         } catch (e) {
-            console.error("Error adding document: ", e);
-            alert('حدث خطأ أثناء حفظ الرمز، يرجى المحاولة لاحقاً.');
+            alert('حدث خطأ أثناء حفظ الرمز.');
+        }
+    };
+
+    // جلب المستخدمين الفعالين
+    window.loadUsers = async function() {
+        const tbody = document.getElementById('usersTableBody');
+        tbody.innerHTML = '<tr><td colspan="5">جاري التحميل...</td></tr>';
+        try {
+            const querySnapshot = await getDocs(collection(db, "licenses"));
+            tbody.innerHTML = '';
+            if(querySnapshot.empty) {
+                tbody.innerHTML = '<tr><td colspan="5">لا يوجد مستخدمين مضافين حتى الآن</td></tr>';
+                return;
+            }
+            querySnapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                const expDate = new Date(data.expire_date).toLocaleDateString();
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${data.phone}</td>
+                        <td>${data.project_id}</td>
+                        <td><b>${data.key_code}</b></td>
+                        <td>${expDate}</td>
+                        <td><span style="color: green; font-weight: bold;">${data.status}</span></td>
+                    </tr>
+                `;
+            });
+        } catch(e) {
+            tbody.innerHTML = '<tr><td colspan="5">خطأ في جلب البيانات</td></tr>';
+        }
+    };
+
+    // إدارة المشاريع (عرض)
+    window.loadProjects = async function() {
+        const tbody = document.getElementById('projectsTableBody');
+        tbody.innerHTML = '<tr><td colspan="3">جاري التحميل...</td></tr>';
+        try {
+            const querySnapshot = await getDocs(collection(db, "projects"));
+            tbody.innerHTML = '';
+            querySnapshot.forEach((docSnap) => {
+                const p = docSnap.data();
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${p.name}</td>
+                        <td>${p.id}</td>
+                        <td><button class="delete-btn" onclick="deleteProj('${docSnap.id}')">حذف</button></td>
+                    </tr>
+                `;
+            });
+        } catch(e) {
+            tbody.innerHTML = '<tr><td colspan="3">لا توجد مشاريع مضافة</td></tr>';
+        }
+    };
+
+    // إضافة مشروع جديد
+    window.addProject = async function() {
+        const name = document.getElementById('newProjectName').value.trim();
+        const id = document.getElementById('newProjectId').value.trim().toLowerCase();
+        if(!name || !id) {
+            alert('يرجى إدخال اسم ومعرف المشروع!');
+            return;
+        }
+        try {
+            await setDoc(doc(db, "projects", id), { name: name, id: id });
+            alert('تم إضافة المشروع بنجاح!');
+            document.getElementById('newProjectName').value = '';
+            document.getElementById('newProjectId').value = '';
+            loadProjects();
+            loadProjectsToDropdown();
+        } catch(e) {
+            alert('خطأ أثناء إضافة المشروع.');
+        }
+    };
+
+    // حذف مشروع
+    window.deleteProj = async function(docId) {
+        if(confirm('هل أنت متأكد من حذف هذا المشروع؟')) {
+            await deleteDoc(doc(db, "projects", docId));
+            loadProjects();
+            loadProjectsToDropdown();
         }
     };
 </script>
