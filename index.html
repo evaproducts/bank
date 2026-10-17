@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EVA BANK - نظام إدارة الاشتراكات المركزي</title>
+    <title>EVA BANK - نظام إدارة الاشتراكات المتقدم</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
@@ -17,7 +17,7 @@
         /* التصميم العام */
         .container { max-width: 800px; margin: 20px auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
         
-        /* القائمة العلوية (التبويبات) */
+        /* القائمة العلوية */
         .navbar { display: flex; justify-content: space-around; background: #343a40; border-radius: 8px; margin-bottom: 25px; overflow: hidden; }
         .nav-btn { background: none; border: none; color: white; padding: 15px 20px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; transition: background 0.3s; }
         .nav-btn:hover, .nav-btn.active { background: #007bff; }
@@ -35,7 +35,7 @@
         .result-box h3 { color: #28a745; margin-bottom: 10px; }
         .key-display { font-size: 20px; font-weight: bold; background: #fff; padding: 10px; border: 1px dashed #ccc; border-radius: 6px; display: inline-block; margin-top: 10px; color: #333; letter-spacing: 2px; }
 
-        /* الجداول والمشاريع */
+        /* الجداول */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border: 1px solid #dee2e6; padding: 12px; text-align: center; font-size: 14px; }
         th { background-color: #f8f9fa; color: #333; }
@@ -66,9 +66,9 @@
 
 <!-- لوحة التحكم الرئيسية -->
 <div class="container" id="mainDashboard">
-    <h1>🏦 EVA BANK - نظام إدارة الاشتراكات</h1>
+    <h1>🏦 EVA BANK - إدارة الاشتراكات والصلاحيات</h1>
 
-    <!-- القائمة العلوية (3 شحطات/تبويبات) -->
+    <!-- القائمة العلوية -->
     <div class="navbar">
         <button class="nav-btn active" onclick="switchTab('generateTab', this)">شحن وتوليد الرخص</button>
         <button class="nav-btn" onclick="switchTab('usersTab', this); loadUsers();">المستخدمين الفعالين</button>
@@ -85,17 +85,29 @@
         </div>
 
         <div class="form-group">
-            <label for="phoneInput">رقم هاتف المشترك:</label>
-            <input type="text" id="phoneInput" placeholder="مثال: 970594101632">
+            <label for="phoneInput">رقم هاتف المشترك (10 أرقام بالضبط):</label>
+            <input type="text" id="phoneInput" maxlength="10" placeholder="مثال: 0594101632">
         </div>
 
         <div class="form-group">
-            <label for="packageSelect">اختر مدة الحزمة (الصلاحية):</label>
-            <select id="packageSelect">
+            <label for="durationSelect">مدة الصلاحية الكلية:</label>
+            <select id="durationSelect">
                 <option value="30">شهر واحد (30 يوم)</option>
                 <option value="90">3 شهور (90 يوم)</option>
+                <option value="180">6 شهور (180 يوم)</option>
                 <option value="365">سنة كاملة (365 يوم)</option>
                 <option value="1">تجريبي (يوم واحد)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="dailyLimitSelect">حد الاستخدام اليومي (ساعات العمل الفعلية):</label>
+            <select id="dailyLimitSelect">
+                <option value="1">ساعة واحدة يومياً</option>
+                <option value="2">ساعتان يومياً</option>
+                <option value="3" selected>3 ساعات يومياً</option>
+                <option value="5">5 ساعات يومياً</option>
+                <option value="24">استخدام مفتوح (بدون تقييد ساعات)</option>
             </select>
         </div>
 
@@ -117,12 +129,13 @@
                     <th>رقم الهاتف</th>
                     <th>المشروع</th>
                     <th>رمز التفعيل</th>
-                    <th>تاريخ الانتهاء</th>
+                    <th>الصلاحية</th>
+                    <th>الحد اليومي</th>
                     <th>الحالة</th>
                 </tr>
             </thead>
             <tbody id="usersTableBody">
-                <tr><td colspan="5"> جاري تحميل البيانات... </td></tr>
+                <tr><td colspan="6"> جاري تحميل البيانات... </td></tr>
             </tbody>
         </table>
     </div>
@@ -132,8 +145,8 @@
         <h2>إدارة مشاريع إيفا</h2>
         <div class="form-group" style="margin-top: 15px;">
             <label>إضافة مشروع جديد:</label>
-            <input type="text" id="newProjectName" placeholder="أدخل اسم المشروع (مثلاً: متجر العطور)">
-            <input type="text" id="newProjectId" placeholder="معرف المشروع بالإنجليزية (مثلاً: perfumes)" style="margin-top: 10px;">
+            <input type="text" id="newProjectName" placeholder="أدخل اسم المشروع (مثلاً: المعلمة إيفا)">
+            <input type="text" id="newProjectId" placeholder="معرف المشروع بالإنجليزية (مثلاً: miss_eva)" style="margin-top: 10px;">
             <button class="action-btn" style="margin-top: 10px;" onclick="addProject()">إضافة المشروع</button>
         </div>
         <hr style="margin: 20px 0;">
@@ -147,13 +160,13 @@
                 </tr>
             </thead>
             <tbody id="projectsTableBody">
-                <!-- يتم تعبئتها ديناميكياً -->
+                <!-- تعبئة ديناميكية -->
             </tbody>
         </table>
     </div>
 </div>
 
-<!-- ربط Firebase SDK ومنطق النظام -->
+<!-- ربط Firebase ومنطق النظام -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -170,7 +183,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // التحقق من تسجيل الدخول
     window.handleLogin = function() {
         const u = document.getElementById('userInput').value.trim();
         const p = document.getElementById('passInput').value.trim();
@@ -183,7 +195,6 @@
         }
     };
 
-    // التنقل بين التبويبات
     window.switchTab = function(tabId, btn) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
@@ -191,14 +202,12 @@
         btn.classList.add('active');
     };
 
-    // تحميل المشاريع في قائمة الاختيار
     async function loadProjectsToDropdown() {
         const select = document.getElementById('projectSelect');
         select.innerHTML = '';
         try {
             const querySnapshot = await getDocs(collection(db, "projects"));
             if(querySnapshot.empty) {
-                // مشاريع افتراضية إذا كانت القائمة فارغة
                 select.innerHTML = '<option value="catalog">قالب الكتالوج الذكي (Catalog)</option><option value="miss_eva">المعلمة إيفا (Miss Eva)</option>';
             } else {
                 querySnapshot.forEach((docSnap) => {
@@ -211,14 +220,16 @@
         }
     }
 
-    // توليد وتفعيل رمز الاشتراك
     window.generateKey = async function() {
         const project = document.getElementById('projectSelect').value;
         const phone = document.getElementById('phoneInput').value.trim();
-        const days = parseInt(document.getElementById('packageSelect').value);
+        const days = parseInt(document.getElementById('durationSelect').value);
+        const dailyLimitHours = parseInt(document.getElementById('dailyLimitSelect').value);
 
-        if (!phone) {
-            alert('يرجى إدخال رقم هاتف المشترك!');
+        // التحقق من أن رقم الهاتف 10 أرقام بالضبط
+        const phoneRegex = /^\d{10}$/;
+        if (!phoneRegex.test(phone)) {
+            alert('خطأ: يجب أن يتكون رقم الهاتف من 10 أرقام بالضبط (مثال: 0594101632)!');
             return;
         }
 
@@ -235,6 +246,7 @@
                 project_id: project,
                 phone: phone,
                 duration_days: days,
+                daily_limit_hours: dailyLimitHours,
                 start_date: startDate.toISOString(),
                 expire_date: expireDate.toISOString(),
                 status: "active"
@@ -242,42 +254,42 @@
 
             document.getElementById('generatedKeyText').innerText = keyCode;
             document.getElementById('resultBox').style.display = 'block';
-            alert('تم حفظ وتفعيل الرمز في بنك الحزم بنجاح!');
+            alert('تم حفظ وتفعيل الرمز بنجاح مع تحديد شروط الاستخدام!');
         } catch (e) {
             alert('حدث خطأ أثناء حفظ الرمز.');
         }
     };
 
-    // جلب المستخدمين الفعالين
     window.loadUsers = async function() {
         const tbody = document.getElementById('usersTableBody');
-        tbody.innerHTML = '<tr><td colspan="5">جاري التحميل...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6">جاري التحميل...</td></tr>';
         try {
             const querySnapshot = await getDocs(collection(db, "licenses"));
             tbody.innerHTML = '';
             if(querySnapshot.empty) {
-                tbody.innerHTML = '<tr><td colspan="5">لا يوجد مستخدمين مضافين حتى الآن</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6">لا يوجد مستخدمين مضافين حتى الآن</td></tr>';
                 return;
             }
             querySnapshot.forEach((docSnap) => {
                 const data = docSnap.data();
                 const expDate = new Date(data.expire_date).toLocaleDateString();
+                const limitText = data.daily_limit_hours === 24 ? 'مفتوح' : `${data.daily_limit_hours} ساعات يومياً`;
                 tbody.innerHTML += `
                     <tr>
                         <td>${data.phone}</td>
                         <td>${data.project_id}</td>
                         <td><b>${data.key_code}</b></td>
-                        <td>${expDate}</td>
+                        <td>${expDate} (${data.duration_days} يوم)</td>
+                        <td>${limitText}</td>
                         <td><span style="color: green; font-weight: bold;">${data.status}</span></td>
                     </tr>
                 `;
             });
         } catch(e) {
-            tbody.innerHTML = '<tr><td colspan="5">خطأ في جلب البيانات</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6">خطأ في جلب البيانات</td></tr>';
         }
     };
 
-    // إدارة المشاريع (عرض)
     window.loadProjects = async function() {
         const tbody = document.getElementById('projectsTableBody');
         tbody.innerHTML = '<tr><td colspan="3">جاري التحميل...</td></tr>';
@@ -299,7 +311,6 @@
         }
     };
 
-    // إضافة مشروع جديد
     window.addProject = async function() {
         const name = document.getElementById('newProjectName').value.trim();
         const id = document.getElementById('newProjectId').value.trim().toLowerCase();
@@ -319,7 +330,6 @@
         }
     };
 
-    // حذف مشروع
     window.deleteProj = async function(docId) {
         if(confirm('هل أنت متأكد من حذف هذا المشروع؟')) {
             await deleteDoc(doc(db, "projects", docId));
