@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EVA BANK - نظام إدارة الاشتراكات المتقدم</title>
+    <title>EVA BANK - نظام إدارة الاشتراكات المركزي</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
@@ -35,8 +35,13 @@
         .result-box h3 { color: #28a745; margin-bottom: 10px; }
         .key-display { font-size: 20px; font-weight: bold; background: #fff; padding: 10px; border: 1px dashed #ccc; border-radius: 6px; display: inline-block; margin-top: 10px; color: #333; letter-spacing: 2px; }
 
+        /* أزرار الفلترة */
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .filter-btn { background: #e9ecef; border: 1px solid #ced4da; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: all 0.3s; }
+        .filter-btn:hover, .filter-btn.active-filter { background: #007bff; color: white; border-color: #007bff; }
+
         /* الجداول */
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #dee2e6; padding: 10px; text-align: center; font-size: 13px; }
         th { background-color: #f8f9fa; color: #333; }
         
@@ -77,7 +82,7 @@
     <!-- القائمة العلوية -->
     <div class="navbar">
         <button class="nav-btn active" onclick="switchTab('generateTab', this)">شحن وتوليد الرخص</button>
-        <button class="nav-btn" onclick="switchTab('usersTab', this); loadUsers();">المستخدمين الفعالين</button>
+        <button class="nav-btn" onclick="switchTab('usersTab', this); loadUsers('all');">المستخدمين الفعالين</button>
         <button class="nav-btn" onclick="switchTab('projectsTab', this); loadProjects();">إدارة المشاريع</button>
     </div>
 
@@ -93,11 +98,6 @@
             <select id="projectSelect">
                 <!-- تعبئة ديناميكية -->
             </select>
-        </div>
-
-        <div class="form-group">
-            <label for="clientLinkInput">رابط المشروع المخصص للعميل:</label>
-            <input type="text" id="clientLinkInput" placeholder="مثال: linky.ps/client-store">
         </div>
 
         <div class="form-group">
@@ -139,6 +139,15 @@
     <!-- 2. شاشة المستخدمين الفعالين -->
     <div id="usersTab" class="tab-content">
         <h2>قائمة المشتركين والفعالين بالنظام</h2>
+        
+        <!-- أزرار الفلترة العلوية -->
+        <div class="filter-bar">
+            <button class="filter-btn active-filter" id="filter-all" onclick="filterUsers('all', this)">عرض الكل</button>
+            <button class="filter-btn" id="filter-warning" onclick="filterUsers('warning', this)">⚠️ قاربت على الانتهاء (أقل من 5 أيام)</button>
+            <button class="filter-btn" id="filter-expired" onclick="filterUsers('expired', this)">❌ منتهية الصلاحية</button>
+            <button class="filter-btn" id="filter-active" onclick="filterUsers('active', this)">✅ السارية تماماً</button>
+        </div>
+
         <table>
             <thead>
                 <tr>
@@ -200,7 +209,8 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // تعريف دالة تسجيل الدخول وربطها بالنافذة العامة لتتفاعل مع الزر بشكل فوري
+    let allUsersData = []; // تخزين مؤقت للبيانات لتسهيل الفلترة الفورية
+
     window.handleLogin = function() {
         const u = document.getElementById('userInput').value.trim();
         const p = document.getElementById('passInput').value.trim();
@@ -241,7 +251,6 @@
     window.generateKey = async function() {
         const clientName = document.getElementById('clientNameInput').value.trim();
         const project = document.getElementById('projectSelect').value;
-        const clientLink = document.getElementById('clientLinkInput').value.trim();
         const phone = document.getElementById('phoneInput').value.trim();
         const days = parseInt(document.getElementById('durationSelect').value);
         const dailyLimitHours = parseInt(document.getElementById('dailyLimitSelect').value);
@@ -258,156 +267,4 @@
         }
 
         const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
-        const keyCode = `EVA-${project.toUpperCase()}-${randomStr}`;
-
-        const startDate = new Date();
-        const expireDate = new Date();
-        expireDate.setDate(startDate.getDate() + days);
-
-        try {
-            await addDoc(collection(db, "licenses"), {
-                client_name: clientName,
-                key_code: keyCode,
-                project_id: project,
-                client_link: clientLink || 'غير محدد',
-                phone: phone,
-                duration_days: days,
-                daily_limit_hours: dailyLimitHours,
-                start_date: startDate.toISOString(),
-                expire_date: expireDate.toISOString(),
-                status: "active"
-            });
-
-            document.getElementById('generatedKeyText').innerText = keyCode;
-            document.getElementById('resultBox').style.display = 'block';
-            alert('تم حفظ وتفعيل الرمز بنجاح!');
-        } catch (e) {
-            alert('حدث خطأ أثناء حفظ الرمز.');
-        }
-    };
-
-    window.loadUsers = async function() {
-        const tbody = document.getElementById('usersTableBody');
-        tbody.innerHTML = '<tr><td colspan="7">جاري التحميل...</td></tr>';
-        try {
-            const querySnapshot = await getDocs(collection(db, "licenses"));
-            tbody.innerHTML = '';
-            if(querySnapshot.empty) {
-                tbody.innerHTML = '<tr><td colspan="7">لا يوجد مستخدمين مضافين حتى الآن</td></tr>';
-                return;
-            }
-            
-            const now = new Date();
-
-            querySnapshot.forEach((docSnap) => {
-                const data = docSnap.data();
-                const expDate = new Date(data.expire_date);
-                const diffTime = expDate - now;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                
-                let statusBadge = `<span class="safe-badge">ساري (${diffDays} يوم متبقي)</span>`;
-                if (diffDays <= 0) {
-                    statusBadge = `<span style="color: red; font-weight: bold;">منتهي الصلاحية</span>`;
-                } else if (diffDays <= 5) {
-                    statusBadge = `<span class="warning-badge">قارب على الانتهاء (${diffDays} أيام)</span>`;
-                }
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td><b>${data.client_name || 'بدون اسم'}</b></td>
-                        <td>${data.phone}</td>
-                        <td>${data.project_id}</td>
-                        <td><a href="https://${data.client_link}" target="_blank">${data.client_link || '-'}</a></td>
-                        <td><b>${data.key_code}</b></td>
-                        <td>${expDate.toLocaleDateString()} <br>${statusBadge}</td>
-                        <td>
-                            <button class="renew-btn" onclick="renewLicense('${docSnap.id}', '${data.expire_date}')">تمديد 30 يوم</button><br>
-                            <button class="delete-btn" onclick="deleteUser('${docSnap.id}')">حذف</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        } catch(e) {
-            tbody.innerHTML = '<tr><td colspan="7">خطأ في جلب البيانات</td></tr>';
-        }
-    };
-
-    window.renewLicense = async function(docId, currentExpireDateStr) {
-        if(confirm('هل تريد تمديد اشتراك هذا العميل 30 يوماً إضافية على نفس الرمز؟')) {
-            try {
-                let baseDate = new Date(currentExpireDateStr);
-                if (baseDate < new Date()) {
-                    baseDate = new Date();
-                }
-                baseDate.setDate(baseDate.getDate() + 30);
-
-                await updateDoc(doc(db, "licenses", docId), {
-                    expire_date: baseDate.toISOString(),
-                    status: "active"
-                });
-                alert('تم تمديد الاشتراك بنجاح لنفس الرمز!');
-                loadUsers();
-            } catch(e) {
-                alert('حدث خطأ أثناء التمديد.');
-            }
-        }
-    };
-
-    window.deleteUser = async function(docId) {
-        if(confirm('هل أنت متأكد من حذف هذا العميل من النظام؟')) {
-            await deleteDoc(doc(db, "licenses", docId));
-            loadUsers();
-        }
-    };
-
-    window.loadProjects = async function() {
-        const tbody = document.getElementById('projectsTableBody');
-        tbody.innerHTML = '<tr><td colspan="3">جاري التحميل...</td></tr>';
-        try {
-            const querySnapshot = await getDocs(collection(db, "projects"));
-            tbody.innerHTML = '';
-            querySnapshot.forEach((docSnap) => {
-                const p = docSnap.data();
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${p.name}</td>
-                        <td>${p.id}</td>
-                        <td><button class="delete-btn" onclick="deleteProj('${docSnap.id}')">حذف</button></td>
-                    </tr>
-                `;
-            });
-        } catch(e) {
-            tbody.innerHTML = '<tr><td colspan="3">لا توجد مشاريع مضافة</td></tr>';
-        }
-    };
-
-    window.addProject = async function() {
-        const name = document.getElementById('newProjectName').value.trim();
-        const id = document.getElementById('newProjectId').value.trim().toLowerCase();
-        if(!name || !id) {
-            alert('يرجى إدخال اسم ومعرف المشروع!');
-            return;
-        }
-        try {
-            await setDoc(doc(db, "projects", id), { name: name, id: id });
-            alert('تم إضافة المشروع بنجاح!');
-            document.getElementById('newProjectName').value = '';
-            document.getElementById('newProjectId').value = '';
-            loadProjects();
-            loadProjectsToDropdown();
-        } catch(e) {
-            alert('خطأ أثناء إضافة المشروع.');
-        }
-    };
-
-    window.deleteProj = async function(docId) {
-        if(confirm('هل أنت متأكد من حذف هذا المشروع؟')) {
-            await deleteDoc(doc(db, "projects", docId));
-            loadProjects();
-            loadProjectsToDropdown();
-        }
-    };
-</script>
-
-</body>
-</html>
+        const keyCode = `EVA-${project.
