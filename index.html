@@ -60,11 +60,11 @@
         <h2>🔒 تسجيل دخول بنك إيفا</h2>
         <div class="form-group">
             <label>اسم المستخدم (USER):</label>
-            <input type="text" id="userInput" placeholder="EVA-001">
+            <input type="text" id="userInput" value="EVA-001" placeholder="EVA-001">
         </div>
         <div class="form-group">
             <label>كلمة المرور (PASS):</label>
-            <input type="password" id="passInput" placeholder="0594101632">
+            <input type="password" id="passInput" value="0594101632" placeholder="0594101632">
         </div>
         <button class="action-btn" onclick="handleLogin()">دخول النظام</button>
     </div>
@@ -200,6 +200,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // تعريف دالة تسجيل الدخول وربطها بالنافذة العامة لتتفاعل مع الزر بشكل فوري
     window.handleLogin = function() {
         const u = document.getElementById('userInput').value.trim();
         const p = document.getElementById('passInput').value.trim();
@@ -331,13 +332,12 @@
         }
     };
 
-    // تمديد نفس الرمز (إضافة 30 يوماً فوق تاريخ الانتهاء الحالي)
     window.renewLicense = async function(docId, currentExpireDateStr) {
         if(confirm('هل تريد تمديد اشتراك هذا العميل 30 يوماً إضافية على نفس الرمز؟')) {
             try {
                 let baseDate = new Date(currentExpireDateStr);
                 if (baseDate < new Date()) {
-                    baseDate = new Date(); // إذا كان منتهياً، نبدأ التمديد من اليوم
+                    baseDate = new Date();
                 }
                 baseDate.setDate(baseDate.getDate() + 30);
 
@@ -397,3 +397,17 @@
             loadProjectsToDropdown();
         } catch(e) {
             alert('خطأ أثناء إضافة المشروع.');
+        }
+    };
+
+    window.deleteProj = async function(docId) {
+        if(confirm('هل أنت متأكد من حذف هذا المشروع؟')) {
+            await deleteDoc(doc(db, "projects", docId));
+            loadProjects();
+            loadProjectsToDropdown();
+        }
+    };
+</script>
+
+</body>
+</html>
