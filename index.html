@@ -71,7 +71,7 @@
             <label>كلمة المرور (PASS):</label>
             <input type="password" id="passInput" value="0594101632" placeholder="0594101632">
         </div>
-        <button class="action-btn" onclick="handleLogin()">دخول النظام</button>
+        <button class="action-btn" id="loginBtn">دخول النظام</button>
     </div>
 </div>
 
@@ -198,73 +198,4 @@
     import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
-        apiKey: "AIzaSyCW-Kqz4jQbu-wUg-LOVPJdWv7p3jIOB6o",
-        authDomain: "eva-bank-a077d.firebaseapp.com",
-        projectId: "eva-bank-a077d",
-        storageBucket: "eva-bank-a077d.firebasestorage.app",
-        messagingSenderId: "264483948353",
-        appId: "1:264483948353:web:4472d6ee97b432a351b800"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    let allUsersData = []; // تخزين مؤقت للبيانات لتسهيل الفلترة الفورية
-
-    window.handleLogin = function() {
-        const u = document.getElementById('userInput').value.trim();
-        const p = document.getElementById('passInput').value.trim();
-        if(u === "EVA-001" && p === "0594101632") {
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('mainDashboard').style.display = 'block';
-            loadProjectsToDropdown();
-        } else {
-            alert('خطأ في اسم المستخدم أو كلمة المرور!');
-        }
-    };
-
-    window.switchTab = function(tabId, btn) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        btn.classList.add('active');
-    };
-
-    async function loadProjectsToDropdown() {
-        const select = document.getElementById('projectSelect');
-        select.innerHTML = '';
-        try {
-            const querySnapshot = await getDocs(collection(db, "projects"));
-            if(querySnapshot.empty) {
-                select.innerHTML = '<option value="catalog">قالب الكتالوج الذكي (Catalog)</option><option value="miss_eva">المعلمة إيفا (Miss Eva)</option>';
-            } else {
-                querySnapshot.forEach((docSnap) => {
-                    const p = docSnap.data();
-                    select.innerHTML += `<option value="${p.id}">${p.name}</option>`;
-                });
-            }
-        } catch(e) {
-            select.innerHTML = '<option value="catalog">قالب الكتالوج الذكي (Catalog)</option><option value="miss_eva">المعلمة إيفا (Miss Eva)</option>';
-        }
-    }
-
-    window.generateKey = async function() {
-        const clientName = document.getElementById('clientNameInput').value.trim();
-        const project = document.getElementById('projectSelect').value;
-        const phone = document.getElementById('phoneInput').value.trim();
-        const days = parseInt(document.getElementById('durationSelect').value);
-        const dailyLimitHours = parseInt(document.getElementById('dailyLimitSelect').value);
-
-        if (!clientName) {
-            alert('يرجى إدخال اسم العميل أو المؤسسة!');
-            return;
-        }
-
-        const phoneRegex = /^\d{10}$/;
-        if (!phoneRegex.test(phone)) {
-            alert('خطأ: يجب أن يتكون رقم الهاتف من 10 أرقام بالضبط (مثال: 0594101632)!');
-            return;
-        }
-
-        const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
-        const keyCode = `EVA-${project.
+        apiKey:
