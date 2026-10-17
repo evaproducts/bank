@@ -15,7 +15,7 @@
         .login-card h2 { text-align: center; margin-bottom: 20px; color: #111; }
 
         /* التصميم العام */
-        .container { max-width: 800px; margin: 20px auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .container { max-width: 950px; margin: 20px auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
         
         /* القائمة العلوية */
         .navbar { display: flex; justify-content: space-around; background: #343a40; border-radius: 8px; margin-bottom: 25px; overflow: hidden; }
@@ -37,11 +37,17 @@
 
         /* الجداول */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: center; font-size: 14px; }
+        th, td { border: 1px solid #dee2e6; padding: 10px; text-align: center; font-size: 13px; }
         th { background-color: #f8f9fa; color: #333; }
-        .delete-btn { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        
+        .renew-btn { background: #ffc107; color: #212529; border: none; padding: 6px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-bottom: 4px; }
+        .renew-btn:hover { background: #e0a800; }
+        .delete-btn { background: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
         .delete-btn:hover { background: #c82333; }
         
+        .warning-badge { background: #ffcccc; color: #900; padding: 4px 8px; border-radius: 4px; font-weight: bold; display: inline-block; }
+        .safe-badge { color: green; font-weight: bold; }
+
         .tab-content { display: none; }
         .tab-content.active { display: block; }
     </style>
@@ -66,7 +72,7 @@
 
 <!-- لوحة التحكم الرئيسية -->
 <div class="container" id="mainDashboard">
-    <h1>🏦 EVA BANK - إدارة الاشتراكات والصلاحيات</h1>
+    <h1>🏦 EVA BANK - إدارة الاشتراكات والصلاحيات المركزية</h1>
 
     <!-- القائمة العلوية -->
     <div class="navbar">
@@ -78,10 +84,20 @@
     <!-- 1. شاشة شحن وتوليد الرخص -->
     <div id="generateTab" class="tab-content active">
         <div class="form-group">
+            <label for="clientNameInput">اسم العميل / المؤسسة:</label>
+            <input type="text" id="clientNameInput" placeholder="مثال: معرض إيفا براند">
+        </div>
+
+        <div class="form-group">
             <label for="projectSelect">اختر المشروع المستهدف:</label>
             <select id="projectSelect">
-                <!-- يتم تعبئتها ديناميكياً -->
+                <!-- تعبئة ديناميكية -->
             </select>
+        </div>
+
+        <div class="form-group">
+            <label for="clientLinkInput">رابط المشروع المخصص للعميل:</label>
+            <input type="text" id="clientLinkInput" placeholder="مثال: linky.ps/client-store">
         </div>
 
         <div class="form-group">
@@ -126,16 +142,17 @@
         <table>
             <thead>
                 <tr>
+                    <th>اسم العميل</th>
                     <th>رقم الهاتف</th>
                     <th>المشروع</th>
+                    <th>الرابط المخصص</th>
                     <th>رمز التفعيل</th>
-                    <th>الصلاحية</th>
-                    <th>الحد اليومي</th>
-                    <th>الحالة</th>
+                    <th>تاريخ الانتهاء</th>
+                    <th>الإجراءات</th>
                 </tr>
             </thead>
             <tbody id="usersTableBody">
-                <tr><td colspan="6"> جاري تحميل البيانات... </td></tr>
+                <tr><td colspan="7"> جاري تحميل البيانات... </td></tr>
             </tbody>
         </table>
     </div>
@@ -169,7 +186,7 @@
 <!-- ربط Firebase ومنطق النظام -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCW-Kqz4jQbu-wUg-LOVPJdWv7p3jIOB6o",
@@ -221,12 +238,18 @@
     }
 
     window.generateKey = async function() {
+        const clientName = document.getElementById('clientNameInput').value.trim();
         const project = document.getElementById('projectSelect').value;
+        const clientLink = document.getElementById('clientLinkInput').value.trim();
         const phone = document.getElementById('phoneInput').value.trim();
         const days = parseInt(document.getElementById('durationSelect').value);
         const dailyLimitHours = parseInt(document.getElementById('dailyLimitSelect').value);
 
-        // التحقق من أن رقم الهاتف 10 أرقام بالضبط
+        if (!clientName) {
+            alert('يرجى إدخال اسم العميل أو المؤسسة!');
+            return;
+        }
+
         const phoneRegex = /^\d{10}$/;
         if (!phoneRegex.test(phone)) {
             alert('خطأ: يجب أن يتكون رقم الهاتف من 10 أرقام بالضبط (مثال: 0594101632)!');
@@ -242,8 +265,10 @@
 
         try {
             await addDoc(collection(db, "licenses"), {
+                client_name: clientName,
                 key_code: keyCode,
                 project_id: project,
+                client_link: clientLink || 'غير محدد',
                 phone: phone,
                 duration_days: days,
                 daily_limit_hours: dailyLimitHours,
@@ -254,7 +279,7 @@
 
             document.getElementById('generatedKeyText').innerText = keyCode;
             document.getElementById('resultBox').style.display = 'block';
-            alert('تم حفظ وتفعيل الرمز بنجاح مع تحديد شروط الاستخدام!');
+            alert('تم حفظ وتفعيل الرمز بنجاح!');
         } catch (e) {
             alert('حدث خطأ أثناء حفظ الرمز.');
         }
@@ -262,31 +287,76 @@
 
     window.loadUsers = async function() {
         const tbody = document.getElementById('usersTableBody');
-        tbody.innerHTML = '<tr><td colspan="6">جاري التحميل...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7">جاري التحميل...</td></tr>';
         try {
             const querySnapshot = await getDocs(collection(db, "licenses"));
             tbody.innerHTML = '';
             if(querySnapshot.empty) {
-                tbody.innerHTML = '<tr><td colspan="6">لا يوجد مستخدمين مضافين حتى الآن</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7">لا يوجد مستخدمين مضافين حتى الآن</td></tr>';
                 return;
             }
+            
+            const now = new Date();
+
             querySnapshot.forEach((docSnap) => {
                 const data = docSnap.data();
-                const expDate = new Date(data.expire_date).toLocaleDateString();
-                const limitText = data.daily_limit_hours === 24 ? 'مفتوح' : `${data.daily_limit_hours} ساعات يومياً`;
+                const expDate = new Date(data.expire_date);
+                const diffTime = expDate - now;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                let statusBadge = `<span class="safe-badge">ساري (${diffDays} يوم متبقي)</span>`;
+                if (diffDays <= 0) {
+                    statusBadge = `<span style="color: red; font-weight: bold;">منتهي الصلاحية</span>`;
+                } else if (diffDays <= 5) {
+                    statusBadge = `<span class="warning-badge">قارب على الانتهاء (${diffDays} أيام)</span>`;
+                }
+
                 tbody.innerHTML += `
                     <tr>
+                        <td><b>${data.client_name || 'بدون اسم'}</b></td>
                         <td>${data.phone}</td>
                         <td>${data.project_id}</td>
+                        <td><a href="https://${data.client_link}" target="_blank">${data.client_link || '-'}</a></td>
                         <td><b>${data.key_code}</b></td>
-                        <td>${expDate} (${data.duration_days} يوم)</td>
-                        <td>${limitText}</td>
-                        <td><span style="color: green; font-weight: bold;">${data.status}</span></td>
+                        <td>${expDate.toLocaleDateString()} <br>${statusBadge}</td>
+                        <td>
+                            <button class="renew-btn" onclick="renewLicense('${docSnap.id}', '${data.expire_date}')">تمديد 30 يوم</button><br>
+                            <button class="delete-btn" onclick="deleteUser('${docSnap.id}')">حذف</button>
+                        </td>
                     </tr>
                 `;
             });
         } catch(e) {
-            tbody.innerHTML = '<tr><td colspan="6">خطأ في جلب البيانات</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7">خطأ في جلب البيانات</td></tr>';
+        }
+    };
+
+    // تمديد نفس الرمز (إضافة 30 يوماً فوق تاريخ الانتهاء الحالي)
+    window.renewLicense = async function(docId, currentExpireDateStr) {
+        if(confirm('هل تريد تمديد اشتراك هذا العميل 30 يوماً إضافية على نفس الرمز؟')) {
+            try {
+                let baseDate = new Date(currentExpireDateStr);
+                if (baseDate < new Date()) {
+                    baseDate = new Date(); // إذا كان منتهياً، نبدأ التمديد من اليوم
+                }
+                baseDate.setDate(baseDate.getDate() + 30);
+
+                await updateDoc(doc(db, "licenses", docId), {
+                    expire_date: baseDate.toISOString(),
+                    status: "active"
+                });
+                alert('تم تمديد الاشتراك بنجاح لنفس الرمز!');
+                loadUsers();
+            } catch(e) {
+                alert('حدث خطأ أثناء التمديد.');
+            }
+        }
+    };
+
+    window.deleteUser = async function(docId) {
+        if(confirm('هل أنت متأكد من حذف هذا العميل من النظام؟')) {
+            await deleteDoc(doc(db, "licenses", docId));
+            loadUsers();
         }
     };
 
@@ -327,17 +397,3 @@
             loadProjectsToDropdown();
         } catch(e) {
             alert('خطأ أثناء إضافة المشروع.');
-        }
-    };
-
-    window.deleteProj = async function(docId) {
-        if(confirm('هل أنت متأكد من حذف هذا المشروع؟')) {
-            await deleteDoc(doc(db, "projects", docId));
-            loadProjects();
-            loadProjectsToDropdown();
-        }
-    };
-</script>
-
-</body>
-</html>
